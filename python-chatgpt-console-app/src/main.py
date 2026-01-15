@@ -1,22 +1,28 @@
+
 import os
 from chatgpt_client import ChatGPTClient
 from context_manager import ContextManager
+from utils import format_message, format_response, handle_error, print_separator
+
 
 
 def main():
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        api_key = input("Enter your OpenAI API key: ")
+    # For LM Studio, api_key is not required, but can be set to 'lm-studio' by default
+    api_key = "lm-studio"
     context_manager = ContextManager()
     chatgpt_client = ChatGPTClient(api_key)
 
+
+    print_separator()
     print("Welcome to the ChatGPT Console Application!")
     print("Type 'exit' to quit the application.")
+    print_separator()
+
 
     # Model selection
-    model = input("Enter model name (default: gpt-3.5-turbo, or try gpt-4): ").strip()
+    model = input("Enter model name (default: meta-llama-3.1-8b-instruct): ").strip()
     if not model:
-        model = "gpt-3.5-turbo"
+        model = "meta-llama-3.1-8b-instruct"
 
     # System prompt
     system_prompt = input("Enter a system prompt to guide ChatGPT's behavior (or leave blank): ").strip()
@@ -32,6 +38,7 @@ def main():
             print("Invalid role. Please enter 'user', 'assistant', or 'system'.")
             continue
 
+
         user_input = input(f"{role.capitalize()}: ")
         if user_input.lower() == 'exit':
             print("Exiting the application. Goodbye!")
@@ -44,10 +51,14 @@ def main():
         if role == "user":
             messages = context_manager.get_history()
             try:
-                print("ChatGPT: ", end="", flush=True)
+                print(format_message(user_input))
+                print_separator()
+                print("Generating response...\n")
                 assistant_message = chatgpt_client.stream_response(messages, model=model)
+                print_separator()
+                print(format_response(assistant_message))
             except Exception as e:
-                print(f"Error: {e}")
+                handle_error(e)
                 continue
             context_manager.add_to_history({"role": "assistant", "content": assistant_message})
 
